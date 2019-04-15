@@ -1,0 +1,71 @@
+version: '3.7'
+services:
+
+  elasticsearch_container:
+    build:
+      context: ./elasticsearch
+    container_name: elasticsearch
+    env_file: .env
+    environment:
+      # - cluster.name=test
+      - cluster.name=elastic-search-cluster
+      - bootstrap.memory_lock=true
+      # - node.name=stretch_armstrong
+      - node.name=elastic-search
+
+      - transport.host=127.0.0.1
+      - http.host=0.0.0.0
+
+      - xpack.license.self_generated.type=trial
+      - xpack.security.enabled=${SECURITY_ENABLED}
+      - xpack.monitoring.enabled=${MONITORING_ENABLED}
+
+      # - xpack.watcher.enabled=false
+      # - xpack.graph.enabled=false
+      # - xpack.monitoring.history.duration=1d
+
+      - discovery.type=single-node
+
+
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - esnet
+
+  kibana_container:
+    build: kibana
+    # image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+    container_name: kibana
+    hostname: kibana
+    # restart: on-failure
+    environment:
+      - XPACK_MONITORING_ENABLED=${MONITORING_ENABLED}
+      - XPACK_MONITORING_ELASTICSEARCH_URL=http://elasticsearch_container:9200
+      # - XPACK_SECURITY_ENABLED=${SECURITY_ENABLED}
+      - ELASTICSEARCH_URL=http://elasticsearch_container:9200
+    depends_on:
+      - elasticsearch_container
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+     - 5601:5601
+    networks:
+      - esnet
+
+volumes:
+  es_data:
+    driver: local
+
+networks:
+  esnet:
