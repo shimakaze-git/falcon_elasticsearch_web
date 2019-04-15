@@ -1,17 +1,14 @@
 version: '3.7'
 services:
-
-  elasticsearch_container:
+  es_container01:
     build:
       context: ./elasticsearch
-    container_name: elasticsearch
-    env_file: .env
+    container_name: es_container01
+    # env_file: .env
     environment:
-      # - cluster.name=test
       - cluster.name=elastic-search-cluster
       - bootstrap.memory_lock=true
-      # - node.name=stretch_armstrong
-      - node.name=elastic-search
+      - node.name=elastic_search_01
 
       - transport.host=127.0.0.1
       - http.host=0.0.0.0
@@ -33,26 +30,68 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data_01:/usr/share/elasticsearch/data
+      - ./elasticsearch/config/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+      # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     ports:
       - 9200:9200
-      - 9300:9300
+      # - 9201:9200
+      # - 9300:9300
     networks:
       - esnet
 
+  # es_container02:
+  #   build:
+  #     context: ./elasticsearch
+  #   container_name: es_container02
+  #   environment:
+  #     - cluster.name=elastic-search-cluster
+  #     - bootstrap.memory_lock=true
+  #     - node.name=elastic_search_02
+
+  #     - transport.host=127.0.0.1
+  #     - http.host=0.0.0.0
+
+  #     - xpack.license.self_generated.type=trial
+  #     - xpack.security.enabled=${SECURITY_ENABLED}
+  #     - xpack.monitoring.enabled=${MONITORING_ENABLED}
+
+  #     # - xpack.watcher.enabled=false
+  #     # - xpack.graph.enabled=false
+  #     # - xpack.monitoring.history.duration=1d
+
+  #     - discovery.type=single-node
+
+
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   volumes:
+  #     - es_data_02:/usr/share/elasticsearch/data
+  #     - ./elasticsearch/config/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+  #     # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+  #   ports:
+  #     - 9202:9200
+  #     # - 9300:9300
+  #   networks:
+  #     - esnet
+
+
   kibana_container:
     build: kibana
-    # image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
     container_name: kibana
     hostname: kibana
-    # restart: on-failure
+    restart: on-failure
     environment:
       - XPACK_MONITORING_ENABLED=${MONITORING_ENABLED}
-      - XPACK_MONITORING_ELASTICSEARCH_URL=http://elasticsearch_container:9200
+      - XPACK_MONITORING_ELASTICSEARCH_URL=http://es_container01:9200
       # - XPACK_SECURITY_ENABLED=${SECURITY_ENABLED}
-      - ELASTICSEARCH_URL=http://elasticsearch_container:9200
+      - ELASTICSEARCH_URL=http://es_container01:9200
     depends_on:
-      - elasticsearch_container
+      - es_container01
     logging:
       driver: "json-file"
       options:
@@ -64,8 +103,12 @@ services:
       - esnet
 
 volumes:
-  es_data:
+  es_data_01:
     driver: local
+  # es_data_02:
+  #   driver: local
+  # es_data_03:
+  #   driver: local
 
 networks:
   esnet:
