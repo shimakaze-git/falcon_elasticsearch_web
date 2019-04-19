@@ -1,6 +1,7 @@
 # import os
 import json
 import falcon
+import pandas as pd
 
 from elasticsearch import Elasticsearch
 
@@ -11,7 +12,8 @@ class IndexResource:
     def on_get(self, req, resp, **kwargs):
         msg = {
             'index': req.url,
-            'search': req.url + "search/{index_name}"
+            'search': req.url + "search/{index_name}",
+            'redirect': req.url + "redirect"
         }
         resp.status = falcon.HTTP_200
         resp.body = json.dumps(msg)
@@ -44,11 +46,13 @@ class SearcResource:
                 for doc in res['hits']['hits']
             ]
             search_status = "search success"
+            df = pd.DataFrame(hits)
 
             msg = {
                 'search_word': word,
                 'message': search_status,
-                'hits': hits
+                'hits': hits,
+                'html': df.to_html(classes='books')
             }
         else:
             msg = {
